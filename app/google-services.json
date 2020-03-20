@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "612011512558",
+    "firebase_url": "https://mapusers.firebaseio.com",
+    "project_id": "mapusers",
+    "storage_bucket": "mapusers.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:612011512558:android:5a385e047a1bd81c3219ff",
+        "android_client_info": {
+          "package_name": "com.zakariazarrouki.map"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "612011512558-f9588q0r2kqe4lrv8qr6rqlk45ea8bob.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBr6joe4mpX21nqmqJ4GRiPrsD4tv8uD0s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "612011512558-f9588q0r2kqe4lrv8qr6rqlk45ea8bob.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

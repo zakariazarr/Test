@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">map</string>
+
+    <string name="msg_signup">Vous n\'avez pas de compte? <u>S\'inscrire</u></string>
+    <string name="msg_login">Vous avez d\éj\à un compte? <u>Se Sonnecter</u></string>
+
+    <string name="username_hint">Nom d\'utilisateur</string>
+    <string name="password_hint">Mot de passe</string>
+    <string name="birthday_hint">Date de naissance</string>
+    <string name="email_hint">Adresse email</string>
+    <string name="search_hint">Search...</string>
+    <string name="code_signup_hint">Code d\'inscription</string>
+    <string name="tele_hint">Téléphone</string>
+    <string name="msg_required">Champs Obligatoire!</string>
+</resources>
