@@ -53,6 +53,7 @@ public class SignUpActivity extends AppCompatActivity {
         SignupViewModel signupViewModel = new ViewModelProvider(this).get(SignupViewModel.class);
         activitySignUpBinding.setSignupViewModel(signupViewModel);
 
+        signupViewModel.setContext(this);
         signInText = activitySignUpBinding.signInText;
         txtUsername = activitySignUpBinding.txtUsername;
         txtPassword = activitySignUpBinding.txtPassword;
@@ -71,19 +72,11 @@ public class SignUpActivity extends AppCompatActivity {
             }
         });
 
-        signupViewModel.getErrorMessage().observe(this, new Observer<String>() {
-            @Override
-            public void onChanged(String s) {
-                showInfoToast(mContext,s);
-            }
-        });
+        signupViewModel.getErrorMessage().observe(this, s -> showInfoToast(mContext,s));
 
-        signInText.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startActivity(new Intent(mContext, LoginViewModel.class));
-                finish();
-            }
+        signInText.setOnClickListener(v -> {
+            startActivity(new Intent(mContext, LoginActivity.class));
+            finish();
         });
     }
 

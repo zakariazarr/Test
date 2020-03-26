@@ -35,15 +35,9 @@ import static com.zakariazarrouki.map.utility.Functions.showInfoToast;
 public class LoginActivity extends AppCompatActivity {
 
     private String TAG = this.getClass().getName();
-    private EditText txtUsername;
-    private EditText txtPassword;
-    private Button btnLogin;
-    private TextView signUpText;
     private FirebaseAuth mFirebaseAuth;
     private Context mContext;
     private ProgressBar progressBar;
-    private FirebaseUser mFirebaseUser;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,7 +46,7 @@ public class LoginActivity extends AppCompatActivity {
         mContext = this;
 
         mFirebaseAuth = FirebaseAuth.getInstance();
-        mFirebaseUser = mFirebaseAuth.getCurrentUser();
+        FirebaseUser mFirebaseUser = mFirebaseAuth.getCurrentUser();
         if (mFirebaseUser != null) {
             startActivity(new Intent(this, MainActivity.class));
             finish();
@@ -63,56 +57,38 @@ public class LoginActivity extends AppCompatActivity {
         LoginViewModel loginViewModel = new ViewModelProvider(this).get(LoginViewModel.class);
         activityLoginBinding.setLoginViewModel(loginViewModel);
 
-        txtUsername = activityLoginBinding.txtUsername;
-        txtPassword = activityLoginBinding.txtPassword;
-        btnLogin = activityLoginBinding.btnLogin;
-        signUpText = activityLoginBinding.signUpText;
+        TextView signUpText = activityLoginBinding.signUpText;
         progressBar = activityLoginBinding.progressBar;
         progressBar.setVisibility(View.GONE);
-        signUpText.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startActivity(new Intent(mContext,SignUpActivity.class));
-                finish();
-            }
+
+        signUpText.setOnClickListener(v -> {
+            startActivity(new Intent(mContext,SignUpActivity.class));
+            finish();
         });
 
-        loginViewModel.getUser().observe(this, new Observer<User>() {
-            @Override
-            public void onChanged(User user){
-                progressBar.setVisibility(View.VISIBLE);
-                //btnLogin.startAnimation();
-                signIn(user);
-            }
+        loginViewModel.getUser().observe(this, user -> {
+            progressBar.setVisibility(View.VISIBLE);
+            //btnLogin.startAnimation();
+            signIn(user);
         });
 
-        loginViewModel.getErrorMessage().observe(this, new Observer<String>() {
-            @Override
-            public void onChanged(String s) {
-                showInfoToast(mContext,s);
-            }
-        });
+        loginViewModel.getErrorMessage().observe(this, s -> showInfoToast(mContext,s));
     }
 
     public void signIn(final User user){
         mFirebaseAuth.signInWithEmailAndPassword(user.getEmail(), user.getPassword())
-            .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
-                @Override
-                public void onComplete(@NonNull Task<AuthResult> task) {
-                    progressBar.setVisibility(View.GONE);
-                    if (task.isSuccessful()) {
-                        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_success);
-                        //btnLogin.doneLoadingAnimation(R.color.green,bitmap);
-                        goToMainActivity();
+            .addOnCompleteListener(this, task -> {
+                progressBar.setVisibility(View.GONE);
+                if (task.isSuccessful()) {
+                    goToMainActivity();
+                }else{
+                    //btnLogin.stopAnimation();
+                    Log.w(TAG, "signInWithEmail:failure", task.getException());
+                    Exception ex = task.getException();
+                    if (ex == null){
+                        showInfoToast(mContext,getString(R.string.auth_failed_msg));
                     }else{
-                        //btnLogin.stopAnimation();
-                        Log.w(TAG, "signInWithEmail:failure", task.getException());
-                        Exception ex = task.getException();
-                        if (ex == null){
-                            showInfoToast(mContext,"Authentication echoué, merci de ressayer !");
-                        }else{
-                            showInfoToast(mContext,ex.getMessage());
-                        }
+                        showInfoToast(mContext,ex.getMessage());
                     }
                 }
             });

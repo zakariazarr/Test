@@ -1,5 +1,8 @@
 package com.zakariazarrouki.map.viewModel;
 
+import android.content.Context;
+
+import com.zakariazarrouki.map.R;
 import com.zakariazarrouki.map.model.User;
 
 import androidx.lifecycle.LiveData;
@@ -11,11 +14,16 @@ public class SignupViewModel extends ViewModel {
     private User user;
     private MutableLiveData<User> userLiveData;
     private MutableLiveData<String> mMessage;
+    private Context context;
 
     public SignupViewModel() {
         user = new User();
         userLiveData = new MutableLiveData<>();
         mMessage = new MutableLiveData<>();
+    }
+
+    public void setContext(Context context) {
+        this.context = context;
     }
 
     public void afterEmailTextChanged(CharSequence s) {
@@ -40,7 +48,7 @@ public class SignupViewModel extends ViewModel {
         if (user.isSignUpInputDataValid()){
             userLiveData.setValue(user);
         }else{
-            mMessage.setValue("Champs incomplete !");
+            mMessage.setValue(context.getString(R.string.signup_failed_msg));
         }
     }
 

@@ -1,15 +1,19 @@
 <resources>
     <string name="app_name">map</string>
 
-    <string name="msg_signup">Vous n\'avez pas de compte? <u>S\'inscrire</u></string>
-    <string name="msg_login">Vous avez d\éj\à un compte? <u>Se Sonnecter</u></string>
+    <string name="auth_failed_msg">Authentication failed, please try again !</string>
+    <string name="signup_failed_msg">please check your informations and try again !</string>
 
-    <string name="username_hint">Nom d\'utilisateur</string>
-    <string name="password_hint">Mot de passe</string>
-    <string name="birthday_hint">Date de naissance</string>
-    <string name="email_hint">Adresse email</string>
+    <string name="msg_signup">You do not have an account? <u> Register </u></string>
+    <string name="msg_login">Already have an account? <u> Connect </u></string>
+
+    <string name="username_hint">Username</string>
+    <string name="password_hint">Password</string>
+    <string name="birthday_hint">Birth date</string>
+    <string name="email_hint">E-mail</string>
     <string name="search_hint">Search...</string>
     <string name="code_signup_hint">Code d\'inscription</string>
-    <string name="tele_hint">Téléphone</string>
-    <string name="msg_required">Champs Obligatoire!</string>
+    <string name="tele_hint">Phone number</string>
+    <string name="msg_required">Required fields!</string>
+    <string name="logout">Sign out</string>
 </resources>

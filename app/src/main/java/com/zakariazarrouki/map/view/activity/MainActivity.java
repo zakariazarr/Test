@@ -2,46 +2,56 @@ package com.zakariazarrouki.map.view.activity;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.databinding.DataBindingUtil;
-import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ProgressBar;
 
+import com.ferfalk.simplesearchview.SimpleSearchView;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
+import com.tomtom.online.sdk.common.location.LatLng;
 import com.tomtom.online.sdk.common.util.LogUtils;
-import com.tomtom.online.sdk.location.LocationSource;
-import com.tomtom.online.sdk.map.GpsIndicator;
+import com.tomtom.online.sdk.map.Icon;
 import com.tomtom.online.sdk.map.MapFragment;
 import com.tomtom.online.sdk.map.MarkerBuilder;
 import com.tomtom.online.sdk.map.OnMapReadyCallback;
+import com.tomtom.online.sdk.map.RouteBuilder;
 import com.tomtom.online.sdk.map.TomtomMap;
-import com.tomtom.online.sdk.search.OnlineSearchApi;
-import com.tomtom.online.sdk.search.SearchApi;
-import com.tomtom.online.sdk.search.api.SearchError;
-import com.tomtom.online.sdk.search.api.fuzzy.FuzzySearchResultListener;
-import com.tomtom.online.sdk.search.data.fuzzy.FuzzySearchQueryBuilder;
-import com.tomtom.online.sdk.search.data.fuzzy.FuzzySearchResponse;
-import com.tomtom.online.sdk.search.data.fuzzy.FuzzySearchResult;
-import com.tomtom.online.sdk.search.extensions.SearchService;
-import com.tomtom.online.sdk.search.extensions.SearchServiceConnectionCallback;
-import com.tomtom.online.sdk.search.extensions.SearchServiceManager;
+import com.tomtom.online.sdk.routing.data.FullRoute;
+import com.tomtom.online.sdk.routing.data.RouteResponse;
 import com.zakariazarrouki.map.R;
 import com.zakariazarrouki.map.databinding.ActivityMainBinding;
+import com.zakariazarrouki.map.utility.RecyclerViewItemDecoration;
+import com.zakariazarrouki.map.utility.onLoadingUserLocation;
+import com.zakariazarrouki.map.view.adapter.SearchAdapter;
 import com.zakariazarrouki.map.viewModel.MainViewModel;
 
-public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
+import java.util.ArrayList;
+
+import static com.zakariazarrouki.map.utility.Functions.showInfoToast;
+
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, onLoadingUserLocation {
 
     private TomtomMap tomtomMap;
-    private ServiceConnection searchServiceConnection;
-    private Button btnSearch;
+    private SimpleSearchView searchView;
+    private Toolbar toolbar;
+    private RecyclerView recyclerView;
+    private SearchAdapter adapter;
+    private ProgressBar progressBar;
+    private Icon departureIcon;
+    private Icon destinationIcon;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,22 +62,92 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         MainViewModel mainViewModel = new ViewModelProvider(this).get(MainViewModel.class);
         activityMainBinding.setMainViewModel(mainViewModel);
         mainViewModel.setContext(this);
-        btnSearch = activityMainBinding.btnSearch;
+        searchView = activityMainBinding.searchView;
+        toolbar = activityMainBinding.toolbar;
+        recyclerView = activityMainBinding.recyclerView;
+        progressBar = activityMainBinding.progressBar;
+        setSupportActionBar(toolbar);
+
+        adapter = new SearchAdapter(mainViewModel,this::onLoading);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.setHasFixedSize(true);
+        recyclerView.addItemDecoration(new RecyclerViewItemDecoration(1,3,false));
+        recyclerView.setAdapter(adapter);
+        recyclerView.setVisibility(View.GONE);
+        progressBar.setVisibility(View.GONE);
 
         //MapFragment mapFragment =(MapFragment) activityMainBinding.mapFragment;
         MapFragment mapFragment = (MapFragment) getSupportFragmentManager().findFragmentById(R.id.map_fragment);
         mapFragment.getAsyncMap(this);
 
-        mainViewModel.getResultLivedata().observe(this, new Observer<FuzzySearchResult>() {
+        departureIcon = Icon.Factory.fromResources(MainActivity.this, R.drawable.ic_map_route_departure);
+        destinationIcon = Icon.Factory.fromResources(MainActivity.this, R.drawable.ic_map_route_destination);
+
+        mainViewModel.getRouteResponseLiveData().observe(this, routeResponse -> {
+            toolbar.setVisibility(View.VISIBLE);
+            searchView.closeSearch();
+            recyclerView.setVisibility(View.GONE);
+            adapter.setListLocation(new ArrayList<>());
+            tomtomMap.removeMarkers();
+            tomtomMap.clearRoute();
+
+            for (FullRoute fullRoute : routeResponse.getRoutes()) {
+                tomtomMap.addRoute(new RouteBuilder(fullRoute.getCoordinates()).startIcon(departureIcon).endIcon(destinationIcon));
+            }
+            tomtomMap.displayRoutesOverview();
+        });
+
+        mainViewModel.getListResultLivedata().observe(this, fuzzySearchResults -> {
+            adapter.setListLocation(fuzzySearchResults);
+            progressBar.setVisibility(View.GONE);
+        });
+
+        mainViewModel.getErrorMsg().observe(this, s -> showInfoToast(MainActivity.this,s));
+
+        searchView.setOnQueryTextListener(new SimpleSearchView.OnQueryTextListener() {
             @Override
-            public void onChanged(FuzzySearchResult fuzzySearchResult) {
-                MarkerBuilder  markerBuilder = new MarkerBuilder(fuzzySearchResult.getPosition());
-                tomtomMap.addMarker(markerBuilder);
+            public boolean onQueryTextSubmit(String query) {
+               return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                if (newText.length()>0){
+                    progressBar.setVisibility(View.VISIBLE);
+                    recyclerView.setVisibility(View.VISIBLE);
+                    mainViewModel.searchQuery(newText);
+                }
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextCleared() {
+                return false;
             }
         });
 
+        searchView.setOnSearchViewListener(new SimpleSearchView.SearchViewListener() {
+            @Override
+            public void onSearchViewShown() {
+                toolbar.setVisibility(View.INVISIBLE);
+                recyclerView.setVisibility(View.VISIBLE);
+            }
 
-        btnSearch.setOnClickListener(view -> mainViewModel.searchQuery());
+            @Override
+            public void onSearchViewClosed() {
+                toolbar.setVisibility(View.VISIBLE);
+                recyclerView.setVisibility(View.GONE);
+                adapter.setListLocation(new ArrayList<>());
+            }
+
+            @Override
+            public void onSearchViewShownAnimation() {
+            }
+
+            @Override
+            public void onSearchViewClosedAnimation() {
+            }
+        });
     }
 
     @Override
@@ -81,5 +161,32 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         tomtomMap.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(@NonNull Menu menu) {
+        getMenuInflater().inflate(R.menu.search_menu,menu);
+        MenuItem item = menu.findItem(R.id.action_search);
+        searchView.setMenuItem(item);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+
+        switch (item.getItemId()){
+            case R.id.logout:
+                FirebaseAuth.getInstance().signOut();
+                finish();
+                startActivity(new Intent(this,LoginActivity.class));
+                return true;
+        }
+        return super.onOptionsItemSelected(item);
+
+    }
+
+    @Override
+    public LatLng onLoading() {
+        return new LatLng(tomtomMap.getUserLocation().getLatitude(),tomtomMap.getUserLocation().getLongitude());
     }
 }
